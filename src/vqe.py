@@ -4,33 +4,35 @@ import random as rand
 
 import numpy as np
 
-from problem import problem
+import ising
+import result
 
+#TODO: Verify my functionality
+class vqe:
+    def __init__(self, problem_hamiltonian:ising.ising):
 
-class VQE:
-    def __init__(self, problem_instance:problem):
-        self.Np = problem_instance.Np
-        self.J = problem_instance.J
-        self.kappa = problem_instance.kappa
-        self.ZZ_couplings = problem_instance.ZZ
+        self.Np, self.J, self.kappa, self.lattice, self.disorder = problem_hamiltonian.get_params()
 
-        self.q = cirq.NamedQubit("q").range(self.Np, prefix="q")
+        self.q = cirq.NamedQubit("p").range(self.Np, prefix="p")
     
     
-    #Set the Parameters of the object
-
+    #Set the Parameters of the 
     def set_parameters(self, dt, p2, N_layers):
         self.dt = dt
         self.p2 = p2
+        self.p1 = p2/10
+
         self.N_layers = N_layers
 
 
     #Callthe simulator
-    def simulate(self,i):
+    def simulate(self,i:int =1):
         self.__construct_circuit()
 
         simulator = qsimcirq.QSimSimulator()
-        results = simulator.simulate(self.circuit)
+        results = result.result(simulator.simulate(self.circuit))
+
+        return results
 
         
     
@@ -50,19 +52,20 @@ class VQE:
     def __Hp_layer(self,t):
         power = -2*self.dt*self.__f(t)
 
-        for pair in self.ZZ_couplings:
+        for pair in self.lattice:
             qubit0 = self.q[pair[0]]
             qubit1 = self.q[pair[1]]
-            yield (cirq.ZZ**(power/np.pi)).on(qubit0, qubit1)
+            yield (cirq.ZZ**(self.J*power/np.pi)).on(qubit0, qubit1)
             yield self.__double_qubit_error(qubit0, qubit1)
 
         transverse_field = []
         errors = []
         for qubit in self.q:
-            transverse_field.append(cirq.rz(power).on(qubit))
+            transverse_field.append(cirq.rz(power*self.kappa).on(qubit))
             errors.append(self.__single_qubit_error(qubit))
 
-        yield [cirq.Moment(transverse_field), cirq.Moment(errors)]
+        yield cirq.Moment(transverse_field)
+        yield errors
 
     def __H0_layer(self, t):
         power = -2*self.dt*(1-self.__f(t))
@@ -72,7 +75,8 @@ class VQE:
             gates.append(cirq.rx(power).on(qubit))
             errors.append(self.__single_qubit_error(qubit))
             
-        yield [cirq.Moment(gates), cirq.Moment(errors)]
+        yield cirq.Moment(gates)
+        yield errors
 
 
     def __f(self, t):
