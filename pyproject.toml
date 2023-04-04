@@ -1,0 +1,17 @@
+[project]
+name = "relaxational_quantum_eigensolver_gsgrattan"
+version = "0.0.1"
+authors = [
+    { name = "George Grattan", email="gsgrattan@mines.edu"}
+]
+description = "Cirq Implementation of the Relaxational Quantum Eigensolver"
+readme = "README.md"
+
+[project.urls]
+"Homepage" = "https://github.com/gsgrattan/RQE"
+#TODO Add python and package version dependencies
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+
