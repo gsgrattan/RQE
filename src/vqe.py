@@ -38,6 +38,7 @@ class vqe:
     
     def __construct_circuit(self):
         self.circuit = cirq.Circuit()
+        self.circuit.append(self.__initial_state())
         for k in range(self.N_layers):
             t = (k+1)/(self.N_layers + 1)
             self.circuit.append(self.__algorithmic_layer(t))
@@ -46,8 +47,8 @@ class vqe:
 
     def __algorithmic_layer(self, t):
 
-        yield self.__Hp_layer(t)
         yield self.__H0_layer(t)
+        yield self.__Hp_layer(t)
 
     def __Hp_layer(self,t):
         power = -2*self.dt*self.__f(t)
@@ -55,13 +56,14 @@ class vqe:
         for pair in self.lattice:
             qubit0 = self.q[pair[0]]
             qubit1 = self.q[pair[1]]
+            
             yield (cirq.ZZ**(self.J*power/np.pi)).on(qubit0, qubit1)
             yield self.__double_qubit_error(qubit0, qubit1)
 
         transverse_field = []
         errors = []
         for qubit in self.q:
-            transverse_field.append(cirq.rz(power*self.kappa).on(qubit))
+            transverse_field.append(cirq.rz(self.kappa*power).on(qubit))
             errors.append(self.__single_qubit_error(qubit))
 
         yield cirq.Moment(transverse_field)
@@ -78,7 +80,11 @@ class vqe:
         yield cirq.Moment(gates)
         yield errors
 
-
+    def __initial_state(self):
+        gates = []
+        for q in self.q:
+            gates.append(cirq.H.on(q))
+        yield cirq.Moment(gates)
     def __f(self, t):
         return (1-(1-t)**2)
 
