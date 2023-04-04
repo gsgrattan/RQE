@@ -76,13 +76,10 @@ class result:
         final_state = self.cirq_result.state_vector()
         qubit_map = self.cirq_result.qubit_map
 
-        Hp = cirq.PauliSum
-
         ZZ_ev = -1*self.J*pauli_ZZ.expectation_from_state_vector(final_state, qubit_map = qubit_map)
 
 
         X_ev = -1*self.kappa*pauli_X.expectation_from_state_vector(final_state, qubit_map = qubit_map)
-        print(np.real(ZZ_ev), np.real(X_ev))
         return np.real(ZZ_ev + X_ev)
 
     def negativity(self):
