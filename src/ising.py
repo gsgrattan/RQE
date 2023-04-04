@@ -6,7 +6,7 @@ class ising:
     A class to represent a transverse field Ising model.
 
     Attributes: 
-    ----------
+    -----------
     Np : int 
         number of spins/qubits in the model
     J : float
@@ -37,12 +37,12 @@ class ising:
                 kappa : float = 0.5
                     strength of the transverse field
                 disorder : bool = False
-                    True if we want longitudional on each of the spins
+                    True if we want longitudional disorder on each of the spins
                 periodic_bc : bool = True
                     True if the lattice has periodic boundry conditions
 
         get_params(self)
-            Returns the parameters needed to simulate the hamiltonian.
+                Returns the parameters needed to simulate the hamiltonian.
 
             Returns
             -------
@@ -56,10 +56,6 @@ class ising:
                     coupling of sites in the ising model
                 disorder : bool
                     True if we want longitudional on each of the spins
-                
-
-
-            
     """
    
     def __init__(self, Np:int, J: float = 1.0, kappa: float = 0.5, disorder: bool = False, periodic_bc:bool = True):
@@ -67,9 +63,8 @@ class ising:
         self.Np = Np
 
       
-        self.J = J
+        self.J = 1*J
 
-        
         self.kappa = kappa
         self.periodic = periodic_bc
         self.disorder = disorder 
@@ -83,7 +78,6 @@ class ising:
         """
         Returns the parameters needed to simulate the hamiltonian.
         """
-
         return self.Np, self.J, self.kappa, self.lattice, self.disorder
 
     def get_disorder_vals(self):
@@ -92,6 +86,7 @@ class ising:
         """
 
         return self.disorder_vals
+
     def __create_lattice(self, N, periodic):
         
         #Creates a 1D lattice of qubits, with or without periodic boundary conditions

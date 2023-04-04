@@ -1,12 +1,30 @@
 
 #TODO: Implement to store density matrix and expectation values to be returned out of algo.simulate() from both RQE and VQE implementations
 import cirq
-import qutip
+try:
+    import qutip
+except ImportError:
+    import pip 
+    pip.main(["install", "--user", "qutip"])
+    import qutip
+    
+
 import numpy as np
 
 import ising
 
 class result:
+    """
+    Object to store results and calculate evaluation metrics
+
+    Attributes:
+    -----------
+
+    Methods:
+    --------
+        expect(problem_hamiltonian):
+            problem_hamiltonian:ising - The problem hamiltonian of interest
+    """
     def __init__(self, sim_result:cirq.SimulationTrialResult):
 
         self.pq = self.__extract_primary_qubits(sim_result.qubit_map)
@@ -60,10 +78,11 @@ class result:
 
         Hp = cirq.PauliSum
 
-        ZZ_ev = self.J*pauli_ZZ.expectation_from_state_vector(final_state, qubit_map = qubit_map)
+        ZZ_ev = -1*self.J*pauli_ZZ.expectation_from_state_vector(final_state, qubit_map = qubit_map)
 
 
-        X_ev = self.kappa*pauli_X.expectation_from_state_vector(final_state, qubit_map = qubit_map)
+        X_ev = -1*self.kappa*pauli_X.expectation_from_state_vector(final_state, qubit_map = qubit_map)
+        print(np.real(ZZ_ev), np.real(X_ev))
         return np.real(ZZ_ev + X_ev)
 
     def negativity(self):
