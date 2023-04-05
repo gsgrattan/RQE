@@ -8,10 +8,8 @@ except ImportError:
     pip.main(["install", "--user", "qutip"])
     import qutip
     
-
-import numpy as np
-
 import ising
+import numpy as np
 
 class result:
     """
