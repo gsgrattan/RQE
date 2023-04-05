@@ -30,10 +30,6 @@ class result:
 
         self.cirq_result = sim_result
 
-        #initialize the variables this class calculates
-
-        
-    
     def __extract_primary_qubits(self, qubit_map):
         primary_qubits = []
         for qubit in list(qubit_map):
@@ -80,7 +76,7 @@ class result:
         X_ev = -1*self.kappa*pauli_X.expectation_from_state_vector(final_state, qubit_map = qubit_map)
         return np.real(ZZ_ev + X_ev)
 
-    def negativity(self):
+    def negativity(self, density_data):
         """
         Calculates the negativity over a splitting partition for the given density matrix data
         NOTE: assumes ring topology of Ising Model
@@ -91,7 +87,6 @@ class result:
                 2^(Np) x 2^(Np) numpy array that stores the data for the density matrix for the primary system
 
         """
-        density_data = self.cirq_result.density_matrix_of(self.pq)
         N = int(np.log2(len(density_data)))
 
         rho = qutip.Qobj(inpt = density_data, dims=[[2]*N, [2]*N])
@@ -117,7 +112,7 @@ class result:
 
 
     def get_final_density_matrix(self):
-        return self.rho_p
+        return self.cirq_result.density_matrix_of(self.pq)
 
     def get_final_state_vector(self):
         return self.cirq_result.final_state_vector()
