@@ -93,7 +93,7 @@ class result:
         splitting_subspace = ([1]* (N//2)) +  ([0] * (N//2))
 
         if N %2 == 1:
-            splitting_subspace += 1
+            splitting_subspace.append(1)
 
         eigenvalues = qutip.partial_transpose(rho, mask = splitting_subspace).eigenenergies()
         
