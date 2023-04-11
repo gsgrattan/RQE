@@ -76,6 +76,7 @@ class result:
         X_ev = -1*self.kappa*pauli_X.expectation_from_state_vector(final_state, qubit_map = qubit_map)
         return np.real(ZZ_ev + X_ev)
 
+
     def negativity(self, density_data):
         """
         Calculates the negativity over a splitting partition for the given density matrix data
