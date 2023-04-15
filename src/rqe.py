@@ -68,13 +68,13 @@ class rqe:
         """
         self.circuit = cirq.Circuit()
 
-        for i in range(self.N_r):
+        for r in range(self.N_r):
             for k in range(self.N_lps):
                 t = (k + 1) / (self.N_lps + 1)
-                self.circuit.append(self.__algorithmic_layer(t))
-            self.circuit.append(self.__reset_layer())
+                self.circuit.append(self.__algorithmic_layer(t,r))
+            self.circuit.append(self.__reset_layer(r))
 
-    def __algorithmic_layer(self, t):
+    def __algorithmic_layer(self, t,r):
         yield self.__primary_layer(t)
         yield self.__shadow_layer(t)
         yield self.__primary_shadow_layer(t)
@@ -168,14 +168,19 @@ class rqe:
         yield cirq.Moment(gates)
         yield errors
 
-    def __reset_layer(self):
+    def __reset_layer(self, r):
         """
         Adds a reset to all the shadow qubits
         """
         gates = []
-        for qubit in self.sq:
-            gates.append(cirq.reset(qubit))
-        yield cirq.Moment(gates)
+
+        #If this is the last layer, measure the shadow qubits, otherwise reset them
+        if (r == self.N_r -1):
+            yield cirq.measure(*self.sq, key="sq_final")
+        else:
+            for qubit in self.sq:
+                gates.append(cirq.reset(qubit))
+            yield cirq.Moment(gates)
 
     def __double_qubit_error(self, qubit1, qubit2):
         error_qubit = random.choice([qubit1, qubit2])
