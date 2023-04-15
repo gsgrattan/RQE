@@ -48,6 +48,7 @@ class rqe:
         self.Bf = Bf
         self.t1 = t1
         self.sq_slope = (Bf - B0)/t1
+        self.shadow_qubit_energies = []
 
     
     def simulate(self, i:int =1 ):
@@ -58,9 +59,11 @@ class rqe:
 
         simulator = qsimcirq.QSimSimulator()
 
-        results = result.result(simulator.simulate(self.circuit))
+        res= simulator.run(self.circuit)
+        measurements = res.measurements["sq_final"][0]
+        return (self.shadow_qubit_energies, measurements)
 
-        return results
+        
 
     def __construct_circuit(self):
         """
@@ -76,7 +79,7 @@ class rqe:
 
     def __algorithmic_layer(self, t,r):
         yield self.__primary_layer(t)
-        yield self.__shadow_layer(t)
+        yield self.__shadow_layer(t,r)
         yield self.__primary_shadow_layer(t)
 
     def __primary_layer(self, t):
@@ -151,15 +154,30 @@ class rqe:
                 yield primary_shadow_gate.on(qubit0, qubit1)
                 yield self.__double_qubit_error(qubit0, qubit1)
 
-    def __shadow_layer(self, t):
+    def __shadow_layer(self, t,r):
         """
         Implements the Trotter layer for the shadow qubit system
+        t: float - time value for current trotterization layer
+        r: int - current reset/RQE cycle index
         """
         gates = []
         errors = []
-        #Iterate through the shadow qubits
+    
+        #If we are on the last layer
+        if (r == self.N_r -1):
+            #if we are on the first layer of the trotter cycle sample the shadow qubit energies
+            if ( abs(t - 1/(self.N_lps +1)) <= 0.001): 
+                self.sq_energies = []
+                #iterate through the number of shadow qubits
+                for i in range(self.Ns):
+                    self.sq_energies = self.__sq_energy_sample(t,r)
+        else:
+            self.sq_energies = self.Ns*[self.__sq_energy_sweep(t,r)]
+            
+
+        
         for index, qubit in enumerate(self.sq):
-            energy = self.__sq_energy(t)
+            energy = self.sq_energies[index]
 
             power = -2*self.dt*energy/2
             gates.append(cirq.rz(power).on(qubit))
@@ -195,15 +213,18 @@ class rqe:
         yield cirq.Z.on(qubit).with_probability(self.p1/3)
 
 
-    def __sq_energy(self, t):
+    def __sq_energy_sweep(self, t):
         """
         Implements the shadow qubit sweeping function from the Berg paper
         """
+        #if we are on the last reset_cycle randomly smaple them from a uniform distribution
         if (t > self.t1):
             return self.Bf
         else: 
             return self.B0 + self.sq_slope*t
 
+    def __sq_energy_sample(self):
+        return np.random.uniform(0.1,6, self.Ns)
 
     def __ramping_function(self, t):
         return 4*t*(1-t)
