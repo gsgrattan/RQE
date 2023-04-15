@@ -20,6 +20,8 @@ class rqe:
 
         self.pq = cirq.NamedQubit("p").range(self.Np, prefix="p")
 
+        #TODO: figure out if I need to seed np.random
+
     def set_circuit_parameters(self, dt:float=0.0667, N_lps:int=20, N_r:int=10, p2:float=0.0) -> None:
         """
         Set the parameters for the RQE circuit
@@ -48,7 +50,7 @@ class rqe:
         self.Bf = Bf
         self.t1 = t1
         self.sq_slope = (Bf - B0)/t1
-        self.shadow_qubit_energies = []
+        self.sq_energies = []
 
     
     def simulate(self, i:int =1 ):
@@ -61,7 +63,7 @@ class rqe:
 
         res= simulator.run(self.circuit)
         measurements = res.measurements["sq_final"][0]
-        return (self.shadow_qubit_energies, measurements)
+        return (self.sq_energies, measurements)
 
         
 
@@ -170,9 +172,9 @@ class rqe:
                 self.sq_energies = []
                 #iterate through the number of shadow qubits
                 for i in range(self.Ns):
-                    self.sq_energies = self.__sq_energy_sample(t,r)
+                    self.sq_energies = self.__sq_energy_sample(t)
         else:
-            self.sq_energies = self.Ns*[self.__sq_energy_sweep(t,r)]
+            self.sq_energies = self.Ns*[self.__sq_energy_sweep(t)]
             
 
         
@@ -223,7 +225,7 @@ class rqe:
         else: 
             return self.B0 + self.sq_slope*t
 
-    def __sq_energy_sample(self):
+    def __sq_energy_sample(self,t):
         return np.random.uniform(0.1,6, self.Ns)
 
     def __ramping_function(self, t):
