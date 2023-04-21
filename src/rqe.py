@@ -30,6 +30,7 @@ class rqe:
         self.N_lps = N_lps
         self.N_r = N_r
 
+
         self.phase_sum = np.pi/4
 
         self.ramping_function_scaling_factor = self.__normalize_ramping_function(N_lps)
@@ -50,7 +51,7 @@ class rqe:
         self.sq_slope = (Bf - B0)/t1
 
     
-    def simulate(self, i:int =1 ):
+    def simulate(self, i:int =1):
         """
         Simulates the RQE Circuit
         """
@@ -159,7 +160,7 @@ class rqe:
         errors = []
         #Iterate through the shadow qubits
         for index, qubit in enumerate(self.sq):
-            energy = self.__sq_energy(t)
+            energy = self.__sq_energy_sweep(t)
 
             power = -2*self.dt*energy/2
             gates.append(cirq.rz(power).on(qubit))
@@ -168,10 +169,23 @@ class rqe:
         yield cirq.Moment(gates)
         yield errors
 
-    def __thermometry_layer(self,t):
-        raise NotImplementedError
+    def __thermometry_layer(self,t, therm_error:bool = True):
+
         #TODO: Implement a thermometry specific layer to do the energy extraction
-        
+        gates = []
+        errors = []
+        energies = self.__sq_energy_sample(t)
+
+        for index, qubit in enumerate(self.sq):
+            energy = energies[index]
+
+            power = -2*self.dt*energy/2
+            gates.append(cirq.rz(power).on(qubit))
+            if (therm_error):
+                errors.append(self.__single_qubit_error(qubit))
+
+        yield cirq.Moment(gates)
+        yield errors       
 
 
     def __reset_layer(self):
@@ -196,7 +210,7 @@ class rqe:
         yield cirq.Z.on(qubit).with_probability(self.p1/3)
 
 
-    def __sq_energy(self, t):
+    def __sq_energy_sweep(self, t):
         """
         Implements the shadow qubit sweeping function from the Berg paper
         """
@@ -204,7 +218,10 @@ class rqe:
             return self.Bf
         else: 
             return self.B0 + self.sq_slope*t
-
+    def __sq_energy_sample(self, t):
+        if (abs(t - 1/(self.N_lps + 1)) < 0.001):
+            self.sq_energy = np.random.uniform(low=1,high=6, size=self.Ns)
+        return self.sq_energy
 
     def __ramping_function(self, t):
         return 4*t*(1-t)
