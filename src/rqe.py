@@ -168,6 +168,12 @@ class rqe:
         yield cirq.Moment(gates)
         yield errors
 
+    def __thermometry_layer(self,t):
+        raise NotImplementedError
+        #TODO: Implement a thermometry specific layer to do the energy extraction
+        
+
+
     def __reset_layer(self):
         """
         Adds a reset to all the shadow qubits
