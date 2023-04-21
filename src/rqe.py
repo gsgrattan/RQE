@@ -10,12 +10,15 @@ import qsimcirq
 
 #TODO: Verify my functionality
 class rqe:
-    def __init__(self, problem_hamiltonian:ising.ising):
+    def __init__(self, problem_hamiltonian:ising.ising, thermometry:bool= False, thermometry_error:bool = False):
         """
         Initializes the RQE object with the Problem Hamiltonian of choice
         """
         self.Np, self.J, self.kappa, self.lattice, self.disorder = problem_hamiltonian.get_params()
         self.Hp = problem_hamiltonian
+        self.thermometry = thermometry
+        self.thermometry_error = thermometry_error
+
 
 
         self.pq = cirq.NamedQubit("p").range(self.Np, prefix="p")
@@ -69,16 +72,31 @@ class rqe:
         """
         self.circuit = cirq.Circuit()
 
-        for i in range(self.N_r):
-            for k in range(self.N_lps):
-                t = (k + 1) / (self.N_lps + 1)
-                self.circuit.append(self.__algorithmic_layer(t))
-            self.circuit.append(self.__reset_layer())
+        for r in range(self.N_r):
+            #If it is the last reset and we are analyzing thermometry, do a thermometry cycle
+            if ((r == self.N_r -1) and self.thermometry):
+                self.circuit.append(self.__thermometry_cycle())
+            else:
+                for k in range(self.N_lps):
+                    t = (k + 1) / (self.N_lps + 1)
+                    self.circuit.append(self.__algorithmic_layer(t))
+                self.circuit.append(self.__reset_layer())
+
 
     def __algorithmic_layer(self, t):
         yield self.__primary_layer(t)
         yield self.__shadow_layer(t)
         yield self.__primary_shadow_layer(t)
+
+    def __thermometry_cycle(self):
+        for k in range(self.N_lps):
+            t = (k+1)/(self.N_lps+1)
+            yield self.__primary_layer(t)
+            yield self.__thermometry_layer(t)
+            yield self.__primary_shadow_layer(t)
+        yield cirq.measure(self.sq, key="s")
+
+
 
     def __primary_layer(self, t):
         """
@@ -86,8 +104,6 @@ class rqe:
         """
         #initialize the power for the cirq.ZZ gate (Ising Interaction)
         power = -2*self.dt
-        
-
         for pair in self.lattice:
             qubit0 = self.pq[pair[0]]
             qubit1 = self.pq[pair[1]]
@@ -169,9 +185,7 @@ class rqe:
         yield cirq.Moment(gates)
         yield errors
 
-    def __thermometry_layer(self,t, therm_error:bool = True):
-
-        #TODO: Implement a thermometry specific layer to do the energy extraction
+    def __thermometry_layer(self,t):
         gates = []
         errors = []
         energies = self.__sq_energy_sample(t)
@@ -181,7 +195,7 @@ class rqe:
 
             power = -2*self.dt*energy/2
             gates.append(cirq.rz(power).on(qubit))
-            if (therm_error):
+            if (self.thermometry_error):
                 errors.append(self.__single_qubit_error(qubit))
 
         yield cirq.Moment(gates)
