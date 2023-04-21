@@ -77,16 +77,22 @@ class rqe:
             if ((r == self.N_r -1) and self.thermometry):
                 self.circuit.append(self.__thermometry_cycle())
             else:
-                for k in range(self.N_lps):
-                    t = (k + 1) / (self.N_lps + 1)
-                    self.circuit.append(self.__algorithmic_layer(t))
-                self.circuit.append(self.__reset_layer())
-
+                self.circuit.append(self.__rqe_cycle())
 
     def __algorithmic_layer(self, t):
         yield self.__primary_layer(t)
         yield self.__shadow_layer(t)
         yield self.__primary_shadow_layer(t)
+
+    def __rqe_cycle(self):
+        for k in range(self.N_lps):
+            t = (k+1)/(self.N_lps +1)
+            yield self.__primary_layer(t)
+            yield self.__shadow_layer(t)
+            yield self.__primary_shadow_layer(t)
+        yield self.__reset_layer()
+
+           
 
     def __thermometry_cycle(self):
         for k in range(self.N_lps):
