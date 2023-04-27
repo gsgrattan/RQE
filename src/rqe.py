@@ -1,4 +1,4 @@
-import model
+import models
 import result
 
 import numpy as np
@@ -10,7 +10,7 @@ import qsimcirq
 
 #TODO: Verify my functionality
 class rqe:
-    def __init__(self, Hp:model.Model, thermometry:bool= False, thermometry_error:bool = False):
+    def __init__(self, Hp:models.Model, thermometry:bool= False, thermometry_error:bool = False):
         """
         Initializes the RQE object with the Problem Hamiltonian of choice
         """
@@ -104,21 +104,22 @@ class rqe:
         """
         Implements the Trotter layer for the Primary system
         """
-        #initialize the power for the cirq.ZZ gate (Ising Interaction)
-
-        #TODO : Implement the use of the interactions from Model.get_interactions()
+        #initialize the power for the trotterization timestep
         power = -2*self.dt
         interactions = self.Hp.get_interactions()
+        interaction_types = list(interactions.keys())
+        interaction_types.sort(reverse=True)
 
-        interaction_types = list(interactions.keys()).sort(reverse=True)
         for n_qubits in interaction_types:
             #Do the two qubit gates for the interactions
+            
             if n_qubits ==2:
                 for pair in self.lattice:
                     qubit0 = self.pq[pair[0]]
                     qubit1 = self.pq[pair[1]]
 
                     J, interaction_gates = interactions[n_qubits]
+
                     for gate in interaction_gates:
 
                         yield ((gate**(J*power/np.pi)).on(qubit0, qubit1))
@@ -144,17 +145,6 @@ class rqe:
 
             yield cirq.Moment(gates)
             yield errors
-
-        #Transverse Field
-        gates = []
-        errors = []
-
-        for i, qubit in enumerate(self.pq):
-            gates.append(cirq.rx(self.kappa*power).on(qubit))
-            errors.append(self.__single_qubit_error(qubit))
-
-        yield cirq.Moment(gates)
-        yield errors
 
     def __primary_shadow_layer(self, t):
         """
