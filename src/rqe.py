@@ -123,7 +123,7 @@ class rqe:
                     for gate in interaction_gates:
 
                         yield ((gate**(J*power/np.pi)).on(qubit0, qubit1))
-                        yield self.__double_qubit_error(qubit0, qubit1)
+                    yield self.__double_qubit_error(qubit0, qubit1)
 
             #Do the single qubit gates for the field/ single site terms
             if n_qubits == 1:
