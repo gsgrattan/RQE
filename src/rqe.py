@@ -1,4 +1,4 @@
-import ising
+import model
 import result
 
 import numpy as np
@@ -10,12 +10,17 @@ import qsimcirq
 
 #TODO: Verify my functionality
 class rqe:
-    def __init__(self, problem_hamiltonian:ising.ising, thermometry:bool= False, thermometry_error:bool = False):
+    def __init__(self, Hp:model.Model, thermometry:bool= False, thermometry_error:bool = False):
         """
         Initializes the RQE object with the Problem Hamiltonian of choice
         """
-        self.Np, self.J, self.kappa, self.lattice, self.disorder = problem_hamiltonian.get_params()
-        self.Hp = problem_hamiltonian
+        self.Hp = Hp
+
+        self.Np = Hp.get_Np()
+        
+        self.lattice = Hp.get_lattice()
+        self.disorder = Hp.is_disorder() 
+        
         self.thermometry = thermometry
         self.thermometry_error = thermometry_error
 
@@ -79,11 +84,6 @@ class rqe:
             else:
                 self.circuit.append(self.__rqe_cycle())
 
-    def __algorithmic_layer(self, t):
-        yield self.__primary_layer(t)
-        yield self.__shadow_layer(t)
-        yield self.__primary_shadow_layer(t)
-
     def __rqe_cycle(self):
         for k in range(self.N_lps):
             t = (k+1)/(self.N_lps +1)
@@ -91,8 +91,6 @@ class rqe:
             yield self.__shadow_layer(t)
             yield self.__primary_shadow_layer(t)
         yield self.__reset_layer()
-
-           
 
     def __thermometry_cycle(self):
         for k in range(self.N_lps):
@@ -102,24 +100,39 @@ class rqe:
             yield self.__primary_shadow_layer(t)
         yield cirq.measure(self.sq, key="s")
 
-
-
     def __primary_layer(self, t):
         """
         Implements the Trotter layer for the Primary system
         """
         #initialize the power for the cirq.ZZ gate (Ising Interaction)
+
+        #TODO : Implement the use of the interactions from Model.get_interactions()
         power = -2*self.dt
-        for pair in self.lattice:
-            qubit0 = self.pq[pair[0]]
-            qubit1 = self.pq[pair[1]]
+        interactions = self.Hp.get_interactions()
 
-            #Add the ising interaction and a potential error
-            yield ((cirq.ZZ**(self.J*power/np.pi)).on(qubit0, qubit1))
-            yield self.__double_qubit_error(qubit0, qubit1)
+        interaction_types = list(interactions.keys()).sort(reverse=True)
+        for n_qubits in interaction_types:
+            #Do the two qubit gates for the interactions
+            if n_qubits ==2:
+                for pair in self.lattice:
+                    qubit0 = self.pq[pair[0]]
+                    qubit1 = self.pq[pair[1]]
 
+                    J, interaction_gates = interactions[n_qubits]
+                    for gate in interaction_gates:
 
-        #Add the disorder
+                        yield ((gate**(J*power/np.pi)).on(qubit0, qubit1))
+                        yield self.__double_qubit_error(qubit0, qubit1)
+
+            #Do the single qubit gates for the field/ single site terms
+            if n_qubits == 1:
+                for qubit in self.pq:
+                    k, field_gates = interactions[n_qubits]
+                    for gate in field_gates:
+                        yield (gate(k*power).on(qubit))
+                        yield self.__single_qubit_error(qubit=qubit)
+
+        #Add the disorder terms
         if (self.disorder):
             gates = []
             errors = []
