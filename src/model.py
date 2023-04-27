@@ -2,7 +2,29 @@
 import random
 import networkx as nx
 import cirq
-class ising:
+
+#TODO: Make an abstract model class that Ising and Heisenberg inherit from, this allows for either to be used to initialize an RQE object
+
+class Model:
+    def get_Np(self):
+        pass
+
+    def is_disorder(self):
+        pass
+
+    def get_disorder_vals(self):
+        pass
+
+    def get_interactions(self):
+        pass
+
+    def get_lattice(self):
+        pass
+
+    def set_lattice(self):
+        pass    
+
+class ising(Model):
     """
     A class to represent a transverse field Ising model.
 
@@ -62,7 +84,6 @@ class ising:
     def __init__(self, Np:int, J: float = 1.0, kappa: float = 0.5, disorder: bool = False, periodic_bc:bool = True):
         # Store the necessary m 
         self.Np = Np
-
       
         self.J = 1*J
 
@@ -70,7 +91,7 @@ class ising:
         self.periodic = periodic_bc
         self.disorder = disorder 
 
-        self.interactions = {1:[cirq.X], 2: [cirq.ZZ]}
+        self.interactions = {1:[kappa, cirq.X], 2: [J, cirq.ZZ]}
 
 
         
@@ -103,11 +124,10 @@ class ising:
         return hvals
     
     #Getters and Setters
-    def get_params(self):
-        """
-        Returns the parameters needed to simulate the hamiltonian.
-        """
-        return self.Np, self.J, self.kappa, self.lattice, self.disorder
+    def get_Np(self):
+        return self.Np
+    def is_disorder(self):
+        return self.disorder  
     
     def get_disorder_vals(self):
         """
@@ -118,12 +138,15 @@ class ising:
     def get_interactions(self):
         return self.interactions
 
+    def get_lattice(self):
+        return self.lattice
+
     def set_lattice(self, lattice_edges):
         self.lattice = lattice_edges
        
 
 
-class heisenberg: #Insert breaking bad reference here
+class heisenberg(Model): #Insert breaking bad reference here
 
     def __init__(self, Np:int, J:float, disorder:bool = False, periodic_bc:bool =True):
         self.Np = Np
@@ -131,7 +154,7 @@ class heisenberg: #Insert breaking bad reference here
         self.disorder = disorder
         self.periodic = periodic_bc
 
-        self.interactions = {2: [cirq.XX, cirq.YY, cirq.ZZ]}
+        self.interactions = {2: [J,cirq.XX, cirq.YY, cirq.ZZ]}
 
         self.lattice = self.__create_lattice(N=Np, periodic=periodic_bc)
         self.disorder_vals = self.__create_h_vals(N=Np, is_disorder=disorder)
@@ -163,15 +186,21 @@ class heisenberg: #Insert breaking bad reference here
 
 
     #Getters and Setters
-    def set_lattice(self, lattice_edges):
-        self.lattice = lattice_edges
+    def get_Np(self):
+        return self.Np
         
-    def get_params(self):
-        return self.Np, self.J, self.lattice, self.disorder
-    
+    def is_disorder(self):
+        return self.disorder
+        
     def get_disorder_vals(self):
         return self.disorder_vals
 
     def get_interactions(self):
         return self.interactions
 
+    def get_lattice(self):
+        return self.lattice
+
+    def set_lattice(self, lattice_edges):
+        self.lattice = lattice_edges
+ 
