@@ -8,7 +8,8 @@ except ImportError:
     pip.main(["install", "--user", "qutip"])
     import qutip
     
-import ising
+import models
+
 import numpy as np
 
 class result:
@@ -38,7 +39,7 @@ class result:
 
         return primary_qubits
 
-    def __generate_pauli_strings(self,lattice):
+    def __generate_ising_pauli_strings(self,lattice):
         ZZ = []
         X = []
 
@@ -54,8 +55,22 @@ class result:
         X = cirq.PauliSum.from_pauli_strings(X)
         return ZZ, X
 
+    def __generate_heisenberg_pauli_strings(self,lattice):
+        heisenberg_interaction_gates = []
+        
+        for pair in lattice:
+            q1, q2 = pair
+            q1 = self.pq[q1]
+            q2 = self.pq[q2]
+            #Generate the XX, YY, ZZ interaction for each edge in the lattice
+            heisenberg_interaction_gates.append(cirq.PauliString(cirq.X(q1), cirq.X(q2)))
+            heisenberg_interaction_gates.append(cirq.PauliString(cirq.Y(q1), cirq.Y(q2)))
+            heisenberg_interaction_gates.append(cirq.PauliString(cirq.Z(q1), cirq.Z(q2)))
+
+        return cirq.PauliSum.from_pauli_strings(heisenberg_interaction_gates)
+
     #TODO: Verify my correctness
-    def expect(self, problem_hamiltonian:ising.ising):
+    def expect(self, problem_hamiltonian:models.Model):
         """
         Calculates the expectation value of the transverse field ising model using the connectivity in problem_hamiltonian
 
@@ -64,17 +79,43 @@ class result:
             problem_hamiltonian : ising 
                 ising object defined in another 
         """
-        self.Np, self.J, self.kappa, lattice, self.disorder = problem_hamiltonian.get_params()
 
-        pauli_ZZ, pauli_X = self.__generate_pauli_strings(lattice)
+        expectation_value = 0
+        self.Np = problem_hamiltonian.get_Np()
+        self.lattice = problem_hamiltonian.get_lattice()
+
+        interactions = problem_hamiltonian.get_interactions()
+        #If we are dealing with an ising model
+
         final_state = self.cirq_result.state_vector()
         qubit_map = self.cirq_result.qubit_map
 
-        ZZ_ev = -1*self.J*pauli_ZZ.expectation_from_state_vector(final_state, qubit_map = qubit_map)
+
+        if (type(problem_hamiltonian) == models.Model.ising):
+            J = interactions[2][0]
+            kappa = interactions[1][0]
+            pauli_ZZ, pauli_X = self.__generate_ising_pauli_strings(self.lattice)
+            ZZ_ev = -1*J*pauli_ZZ.expectation_from_state_vector(final_state, qubit_map = qubit_map)
 
 
-        X_ev = -1*self.kappa*pauli_X.expectation_from_state_vector(final_state, qubit_map = qubit_map)
-        return np.real(ZZ_ev + X_ev)
+            X_ev = -1*kappa*pauli_X.expectation_from_state_vector(final_state, qubit_map = qubit_map)
+
+            expectation_value += np.real(ZZ_ev + X_ev)
+        
+        #If we are dealing with a heisenberg model
+        elif (type(problem_hamiltonian) == models.Model.heisenberg):
+            J = interactions[2][0]
+
+            pauli_XXYYZZ = self.__generate_heisenberg_pauli_strings(self.lattice)
+
+            XXYYZZ_ev = J*pauli_XXYYZZ.expectation_from_state_vector(final_state, qubit_map = qubit_map)
+
+            expectation_value += np.real(XXYYZZ_ev)
+
+
+
+       
+        return expectation_value
 
 
     def negativity(self, density_data):
