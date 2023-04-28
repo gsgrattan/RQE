@@ -18,7 +18,7 @@ class Model:
     def get_disorder_vals(self)->List[float]:
         pass
 
-    def get_interactions(self)->Dict[int: Tuple[int,List[cirq.Gate]]]:
+    def get_interactions(self)->Dict[int, Tuple[int,List[cirq.Gate]]]:
         pass
 
     def get_lattice(self)->list:
