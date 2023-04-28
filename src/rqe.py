@@ -66,8 +66,13 @@ class rqe:
         self.__construct_circuit()
 
         simulator = qsimcirq.QSimSimulator()
+        if self.thermometry:
+            results = simulator.run(self.circuit)
+            measurements = results.measurements["sq_final"][0]
+            return self.sq_energy, measurements
 
-        results = result.result(simulator.simulate(self.circuit))
+        else:
+            results = result.result(simulator.simulate(self.circuit))
 
         return results
 
