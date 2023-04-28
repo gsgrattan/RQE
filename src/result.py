@@ -69,7 +69,7 @@ class result:
 
         return cirq.PauliSum.from_pauli_strings(heisenberg_interaction_gates)
 
-    #TODO: Verify my correctness
+    #TODO: Perform Analytics on the Heisenberg interaction to verify the correctness
     def expect(self, problem_hamiltonian:models.Model):
         """
         Calculates the expectation value of the transverse field ising model using the connectivity in problem_hamiltonian
@@ -91,7 +91,7 @@ class result:
         qubit_map = self.cirq_result.qubit_map
 
 
-        if (type(problem_hamiltonian) == models.Model.ising):
+        if (type(problem_hamiltonian) == models.ising):
             J = interactions[2][0]
             kappa = interactions[1][0]
             pauli_ZZ, pauli_X = self.__generate_ising_pauli_strings(self.lattice)
@@ -103,7 +103,7 @@ class result:
             expectation_value += np.real(ZZ_ev + X_ev)
         
         #If we are dealing with a heisenberg model
-        elif (type(problem_hamiltonian) == models.Model.heisenberg):
+        elif (type(problem_hamiltonian) == models.heisenberg):
             J = interactions[2][0]
 
             pauli_XXYYZZ = self.__generate_heisenberg_pauli_strings(self.lattice)
