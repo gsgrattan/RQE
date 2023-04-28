@@ -103,7 +103,7 @@ class rqe:
             yield self.__primary_layer(t)
             yield self.__thermometry_layer(t)
             yield self.__primary_shadow_layer(t)
-        yield cirq.measure(self.sq, key="s")
+        yield cirq.measure(self.sq, key="sq_final")
 
     def __primary_layer(self, t):
         """
