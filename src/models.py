@@ -3,7 +3,10 @@ import random
 import networkx as nx
 import cirq
 
+from typing import List, Dict, Tuple
+
 #TODO: Make an abstract model class that Ising and Heisenberg inherit from, this allows for either to be used to initialize an RQE object
+
 
 class Model:
     def get_Np(self)->int:
@@ -12,10 +15,10 @@ class Model:
     def is_disorder(self)->bool:
         pass
 
-    def get_disorder_vals(self)->list[float]:
+    def get_disorder_vals(self)->List[float]:
         pass
 
-    def get_interactions(self)->dict[int: tuple[int,list[cirq.Gate]]]:
+    def get_interactions(self)->Dict[int: Tuple[int,List[cirq.Gate]]]:
         pass
 
     def get_lattice(self)->list:
