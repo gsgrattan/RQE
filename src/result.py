@@ -33,9 +33,12 @@ class result:
 
     def __extract_primary_qubits(self, qubit_map):
         primary_qubits = []
-        for qubit in list(qubit_map):
+        self.primary_qubit_indices = []
+        for i, qubit in enumerate(list(qubit_map)):
             if (qubit.name[0] == "p"):
                 primary_qubits.append(qubit)
+                self.primary_qubit_indices.append(i)
+
 
         return primary_qubits
 
@@ -157,4 +160,4 @@ class result:
         return self.cirq_result.density_matrix_of(self.pq)
 
     def get_final_state_vector(self):
-        return self.cirq_result.final_state_vector()  
+        return self.cirq_result.final_state_vector
