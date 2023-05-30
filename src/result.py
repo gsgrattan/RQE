@@ -157,14 +157,4 @@ class result:
         return self.cirq_result.density_matrix_of(self.pq)
 
     def get_final_state_vector(self):
-        return self.cirq_result.final_state_vector()
-
-    
-
-        
-
-
-
-    
-
-    
+        return self.cirq_result.final_state_vector()  
