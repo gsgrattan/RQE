@@ -76,6 +76,21 @@ class rqe:
 
         return results
 
+    def run(self, i:int = 1):
+        self.__construct_circuit()
+
+        self.circuit.append(cirq.measure(self.pq, key = "pq_final"))
+
+        simulator = qsimcirq.QSimSimulator()
+
+        results = simulator.run(self.circuit)
+
+        measurements = results.measurements["pq_final"][0]
+
+        return measurements
+
+
+
     def __construct_circuit(self):
         """
         Constructs the RQE circuit based on the provided parameters
